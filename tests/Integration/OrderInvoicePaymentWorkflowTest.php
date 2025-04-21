@@ -13,6 +13,7 @@ use Sales\Domain\Repository\OrderRepository;
 use Sales\Domain\ValueObject\UUID;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Component\HttpKernel\KernelInterface;
 
 class OrderInvoicePaymentWorkflowTest extends KernelTestCase
 {
@@ -20,6 +21,11 @@ class OrderInvoicePaymentWorkflowTest extends KernelTestCase
     private OrderRepository $orderRepository;
     private InvoiceRepository $invoiceRepository;
     private PaymentRepository $paymentRepository;
+
+    protected static function createKernel(array $options = []): \Symfony\Component\HttpKernel\KernelInterface
+    {
+        return new \App\Kernel($_SERVER['APP_ENV'] ?? 'test', (bool) ($_SERVER['APP_DEBUG'] ?? true));
+    }
 
     protected function setUp(): void
     {
