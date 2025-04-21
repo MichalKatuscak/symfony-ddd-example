@@ -1,0 +1,55 @@
+@startuml Payments Domain Model
+
+package "Payments Domain" {
+    class Payment {
+        - id: UUID
+        - invoiceId: UUID
+        - transactionId: string
+        - amount: Money
+        - status: string
+        - method: string
+        - createdAt: DateTimeImmutable
+        - completedAt: DateTimeImmutable
+        - events: object[]
+        + create(id, invoiceId, transactionId, amount, method): Payment
+        + markAsCompleted(): void
+        + markAsFailed(): void
+        + refund(): void
+        + releaseEvents(): object[]
+    }
+
+    class PaymentReceived {
+        - paymentId: UUID
+        - invoiceId: UUID
+        - transactionId: string
+        - amount: Money
+        - completedAt: DateTimeImmutable
+    }
+
+    interface PaymentRepository {
+        + save(payment: Payment): void
+        + findById(id: UUID): ?Payment
+        + findByInvoiceId(invoiceId: UUID): ?Payment
+        + findByTransactionId(transactionId: string): ?Payment
+        + findAll(): Payment[]
+    }
+
+    interface TransactionIdGenerator {
+        + generate(): string
+    }
+
+    class UuidTransactionIdGenerator {
+        - prefix: string
+        + generate(): string
+    }
+
+    Payment ..> PaymentReceived : emits
+    Payment --> UUID
+    Payment --> Money
+    PaymentReceived --> UUID
+    PaymentReceived --> Money
+    PaymentRepository ..> Payment
+    UuidTransactionIdGenerator ..|> TransactionIdGenerator
+}
+
+@enduml

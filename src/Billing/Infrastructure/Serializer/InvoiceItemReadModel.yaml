@@ -1,0 +1,12 @@
+Billing\Application\ReadModel\InvoiceItemReadModel:
+    attributes:
+        id:
+            groups: ['invoice_read']
+        description:
+            groups: ['invoice_read']
+        unitPrice:
+            groups: ['invoice_read']
+        quantity:
+            groups: ['invoice_read']
+        total:
+            groups: ['invoice_read']

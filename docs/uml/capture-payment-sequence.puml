@@ -1,0 +1,87 @@
+@startuml Capture Payment Sequence Diagram
+
+actor Client
+participant "API Gateway" as API
+participant "PaymentController" as Controller
+participant "CommandBus" as CommandBus
+participant "CompletePaymentHandler" as Handler
+participant "PaymentRepository" as Repository
+participant "Payment" as Payment
+participant "EventBus" as EventBus
+participant "InvoiceRepository" as InvoiceRepo
+participant "Invoice" as Invoice
+database "Database" as DB
+
+Client -> API: POST /api/payments/{id}/complete
+activate API
+
+API -> Controller: complete(id)
+activate Controller
+
+Controller -> CommandBus: dispatch(CompletePayment)
+activate CommandBus
+
+CommandBus -> Handler: __invoke(CompletePayment)
+activate Handler
+
+Handler -> Repository: findById(paymentId)
+activate Repository
+Repository --> Handler: payment
+deactivate Repository
+
+Handler -> Payment: markAsCompleted()
+activate Payment
+Payment --> Handler: void
+deactivate Payment
+
+Handler -> Repository: save(payment)
+activate Repository
+
+Repository -> DB: persist(payment)
+activate DB
+DB --> Repository: void
+deactivate DB
+
+Repository --> Handler: void
+deactivate Repository
+
+Handler -> EventBus: dispatch(PaymentReceived)
+activate EventBus
+
+EventBus -> InvoiceRepo: findById(invoiceId)
+activate InvoiceRepo
+InvoiceRepo --> EventBus: invoice
+deactivate InvoiceRepo
+
+EventBus -> Invoice: markAsPaid(paidAt)
+activate Invoice
+Invoice --> EventBus: void
+deactivate Invoice
+
+EventBus -> InvoiceRepo: save(invoice)
+activate InvoiceRepo
+
+InvoiceRepo -> DB: persist(invoice)
+activate DB
+DB --> InvoiceRepo: void
+deactivate DB
+
+InvoiceRepo --> EventBus: void
+deactivate InvoiceRepo
+
+EventBus --> Handler: void
+deactivate EventBus
+
+Handler --> CommandBus: void
+deactivate Handler
+
+CommandBus --> Controller: void
+deactivate CommandBus
+
+Controller --> API: 204 No Content
+deactivate Controller
+
+API --> Client: 204 No Content
+deactivate API
+
+@enduml

@@ -1,0 +1,379 @@
+openapi: 3.1.0
+info:
+  title: DDD Monorepo API
+  description: API for Sales, Billing, and Payments domains
+  version: 1.0.0
+servers:
+  - url: http://localhost:8080/api
+    description: Local development server
+paths:
+  /orders:
+    post:
+      summary: Create a new order
+      operationId: createOrder
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateOrderRequest'
+      responses:
+        '201':
+          description: Order created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: The ID of the created order
+  /orders/{id}:
+    get:
+      summary: Get an order by ID
+      operationId: getOrder
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Order details
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          description: Order not found
+  /orders/{id}/place:
+    post:
+      summary: Place an order
+      operationId: placeOrder
+      tags:
+        - Orders
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Order placed successfully
+        '404':
+          description: Order not found
+  /invoices:
+    get:
+      summary: List all invoices
+      operationId: listInvoices
+      tags:
+        - Invoices
+      responses:
+        '200':
+          description: List of invoices
+          content:
+            application/hal+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invoice'
+  /invoices/{id}:
+    get:
+      summary: Get an invoice by ID
+      operationId: getInvoice
+      tags:
+        - Invoices
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Invoice details
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Invoice'
+        '404':
+          description: Invoice not found
+  /payments:
+    get:
+      summary: List all payments
+      operationId: listPayments
+      tags:
+        - Payments
+      responses:
+        '200':
+          description: List of payments
+          content:
+            application/hal+json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+  /payments/{id}:
+    get:
+      summary: Get a payment by ID
+      operationId: getPayment
+      tags:
+        - Payments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment details
+          content:
+            application/hal+json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          description: Payment not found
+  /payments/{id}/complete:
+    post:
+      summary: Mark a payment as completed
+      operationId: completePayment
+      tags:
+        - Payments
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Payment completed successfully
+        '404':
+          description: Payment not found
+components:
+  schemas:
+    CreateOrderRequest:
+      type: object
+      required:
+        - customerEmail
+        - items
+      properties:
+        customerEmail:
+          type: string
+          format: email
+          description: Customer's email address
+        customerName:
+          type: string
+          description: Customer's name
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemRequest'
+          minItems: 1
+    OrderItemRequest:
+      type: object
+      required:
+        - productName
+        - unitPrice
+        - quantity
+      properties:
+        productName:
+          type: string
+          description: Name of the product
+        unitPrice:
+          type: number
+          format: float
+          description: Price per unit
+        quantity:
+          type: integer
+          minimum: 1
+          description: Quantity of items
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [draft, placed, cancelled, completed]
+        customerEmail:
+          type: string
+          format: email
+        customerName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        placedAt:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        total:
+          type: number
+          format: float
+        _links:
+          type: object
+          properties:
+            self:
+              type: object
+              properties:
+                href:
+                  type: string
+                  format: uri
+            invoice:
+              type: object
+              properties:
+                href:
+                  type: string
+                  format: uri
+    OrderItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        productName:
+          type: string
+        unitPrice:
+          type: number
+          format: float
+        quantity:
+          type: integer
+        total:
+          type: number
+          format: float
+    Invoice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        orderId:
+          type: string
+          format: uuid
+        invoiceNumber:
+          type: string
+        status:
+          type: string
+          enum: [draft, issued, paid, cancelled]
+        customerEmail:
+          type: string
+          format: email
+        customerName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        issuedAt:
+          type: string
+          format: date-time
+          nullable: true
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        total:
+          type: number
+          format: float
+        _links:
+          type: object
+          properties:
+            self:
+              type: object
+              properties:
+                href:
+                  type: string
+                  format: uri
+            order:
+              type: object
+              properties:
+                href:
+                  type: string
+                  format: uri
+            payment:
+              type: object
+              properties:
+                href:
+                  type: string
+                  format: uri
+    InvoiceItem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        description:
+          type: string
+        unitPrice:
+          type: number
+          format: float
+        quantity:
+          type: integer
+        total:
+          type: number
+          format: float
+    Payment:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        invoiceId:
+          type: string
+          format: uuid
+        transactionId:
+          type: string
+        amount:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [pending, completed, failed, refunded]
+        method:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        _links:
+          type: object
+          properties:
+            self:
+              type: object
+              properties:
+                href:
+                  type: string
+                  format: uri
+            invoice:
+              type: object
+              properties:
+                href:
+                  type: string
+                  format: uri

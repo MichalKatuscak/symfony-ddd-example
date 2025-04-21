@@ -1,0 +1,87 @@
+@startuml Sales Domain Model
+
+package "Sales Domain" {
+    class Order {
+        - id: UUID
+        - status: string
+        - customerEmail: Email
+        - customerName: string
+        - createdAt: DateTimeImmutable
+        - placedAt: DateTimeImmutable
+        - items: OrderItem[]
+        - events: object[]
+        + create(id, customerEmail, customerName): Order
+        + addItem(itemId, productName, unitPrice, quantity): void
+        + place(): void
+        + cancel(): void
+        + complete(): void
+        + getTotal(): Money
+        + releaseEvents(): object[]
+    }
+
+    class OrderItem {
+        - id: UUID
+        - orderId: UUID
+        - productName: string
+        - unitPrice: Money
+        - quantity: int
+        + getTotal(): Money
+    }
+
+    class OrderPlaced {
+        - orderId: UUID
+        - customerEmail: Email
+        - total: Money
+        - placedAt: DateTimeImmutable
+    }
+
+    interface OrderRepository {
+        + save(order: Order): void
+        + findById(id: UUID): ?Order
+        + findAll(): Order[]
+    }
+
+    class UUID {
+        - value: string
+        + generate(): UUID
+        + fromString(uuid: string): UUID
+        + getValue(): string
+        + equals(uuid: UUID): bool
+    }
+
+    class Email {
+        - value: string
+        + fromString(email: string): Email
+        + getValue(): string
+        + equals(email: Email): bool
+    }
+
+    class Money {
+        - amount: int
+        - currency: string
+        + fromFloat(amount: float, currency: string): Money
+        + fromCents(amount: int, currency: string): Money
+        + getAmount(): int
+        + getAmountAsFloat(): float
+        + getCurrency(): string
+        + add(money: Money): Money
+        + subtract(money: Money): Money
+        + multiply(multiplier: int): Money
+        + equals(money: Money): bool
+        + isGreaterThan(money: Money): bool
+        + isLessThan(money: Money): bool
+    }
+
+    Order "1" *-- "many" OrderItem
+    Order ..> OrderPlaced : emits
+    Order --> UUID
+    Order --> Email
+    OrderItem --> UUID
+    OrderItem --> Money
+    OrderPlaced --> UUID
+    OrderPlaced --> Email
+    OrderPlaced --> Money
+    OrderRepository ..> Order
+}
+
+@enduml

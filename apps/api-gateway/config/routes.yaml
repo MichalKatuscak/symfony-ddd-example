@@ -1,0 +1,18 @@
+sales_api:
+    resource: ../../src/Sales/Interface/Api/
+    type: annotation
+    prefix: /api
+
+billing_api:
+    resource: ../../src/Billing/Interface/Api/
+    type: annotation
+    prefix: /api
+
+payments_api:
+    resource: ../../src/Payments/Interface/Api/
+    type: annotation
+    prefix: /api
+
+api_doc:
+    path: /api/doc
+    controller: Nelmio\ApiDocBundle\Controller\DocumentationController::index

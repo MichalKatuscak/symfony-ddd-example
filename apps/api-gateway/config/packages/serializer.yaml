@@ -1,0 +1,9 @@
+framework:
+    serializer:
+        enabled: true
+        mapping:
+            paths:
+                - '%kernel.project_dir%/config/serializer'
+                - '%kernel.project_dir%/src/Sales/Infrastructure/Serializer'
+                - '%kernel.project_dir%/src/Billing/Infrastructure/Serializer'
+                - '%kernel.project_dir%/src/Payments/Infrastructure/Serializer'

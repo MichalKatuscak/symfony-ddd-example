@@ -1,0 +1,75 @@
+@startuml Billing Domain Model
+
+package "Billing Domain" {
+    class Invoice {
+        - id: UUID
+        - orderId: UUID
+        - invoiceNumber: string
+        - status: string
+        - customerEmail: Email
+        - customerName: string
+        - createdAt: DateTimeImmutable
+        - issuedAt: DateTimeImmutable
+        - paidAt: DateTimeImmutable
+        - items: InvoiceItem[]
+        - events: object[]
+        + create(id, orderId, invoiceNumber, customerEmail, customerName): Invoice
+        + addItem(itemId, description, unitPrice, quantity): void
+        + issue(): void
+        + markAsPaid(paidAt: DateTimeImmutable): void
+        + cancel(): void
+        + getTotal(): Money
+        + releaseEvents(): object[]
+    }
+
+    class InvoiceItem {
+        - id: UUID
+        - invoiceId: UUID
+        - description: string
+        - unitPrice: Money
+        - quantity: int
+        + getTotal(): Money
+    }
+
+    class InvoiceIssued {
+        - invoiceId: UUID
+        - orderId: UUID
+        - invoiceNumber: string
+        - customerEmail: Email
+        - total: Money
+        - issuedAt: DateTimeImmutable
+    }
+
+    interface InvoiceRepository {
+        + save(invoice: Invoice): void
+        + findById(id: UUID): ?Invoice
+        + findByOrderId(orderId: UUID): ?Invoice
+        + findByInvoiceNumber(invoiceNumber: string): ?Invoice
+        + findAll(): Invoice[]
+    }
+
+    interface InvoiceNumberGenerator {
+        + generate(): string
+    }
+
+    class SequentialInvoiceNumberGenerator {
+        - lastNumber: int
+        - prefix: string
+        - year: int
+        + generate(): string
+    }
+
+    Invoice "1" *-- "many" InvoiceItem
+    Invoice ..> InvoiceIssued : emits
+    Invoice --> UUID
+    Invoice --> Email
+    InvoiceItem --> UUID
+    InvoiceItem --> Money
+    InvoiceIssued --> UUID
+    InvoiceIssued --> Email
+    InvoiceIssued --> Money
+    InvoiceRepository ..> Invoice
+    SequentialInvoiceNumberGenerator ..|> InvoiceNumberGenerator
+}
+
+@enduml

@@ -1,0 +1,12 @@
+Sales\Application\ReadModel\OrderItemReadModel:
+    attributes:
+        id:
+            groups: ['order_read']
+        productName:
+            groups: ['order_read']
+        unitPrice:
+            groups: ['order_read']
+        quantity:
+            groups: ['order_read']
+        total:
+            groups: ['order_read']

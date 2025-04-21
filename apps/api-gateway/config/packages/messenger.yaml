@@ -1,0 +1,26 @@
+framework:
+    messenger:
+        # Uncomment this (and the failed transport below) to send failed messages to this transport for later handling.
+        # failure_transport: failed
+
+        transports:
+            # https://symfony.com/doc/current/messenger.html#transport-configuration
+            async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            # failed: 'doctrine://default?queue_name=failed'
+            # sync: 'sync://'
+
+        routing:
+            # Route commands to the synchronous command bus
+            'Sales\Application\Command\*': sync
+            'Billing\Application\Command\*': sync
+            'Payments\Application\Command\*': sync
+
+            # Route domain events to the asynchronous event bus
+            'Sales\Domain\Event\*': async
+            'Billing\Domain\Event\*': async
+            'Payments\Domain\Event\*': async
+
+            # Route queries to the synchronous query bus
+            'Sales\Application\Query\*': sync
+            'Billing\Application\Query\*': sync
+            'Payments\Application\Query\*': sync

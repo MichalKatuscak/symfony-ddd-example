@@ -1,0 +1,18 @@
+Payments\Application\ReadModel\PaymentReadModel:
+    attributes:
+        id:
+            groups: ['payment_read']
+        invoiceId:
+            groups: ['payment_read']
+        transactionId:
+            groups: ['payment_read']
+        amount:
+            groups: ['payment_read']
+        status:
+            groups: ['payment_read']
+        method:
+            groups: ['payment_read']
+        createdAt:
+            groups: ['payment_read']
+        completedAt:
+            groups: ['payment_read']

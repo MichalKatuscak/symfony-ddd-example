@@ -1,0 +1,34 @@
+@startuml Domain Relationships
+
+package "Sales Domain" {
+    class Order
+    class OrderPlaced
+}
+
+package "Billing Domain" {
+    class Invoice
+    class InvoiceIssued
+}
+
+package "Payments Domain" {
+    class Payment
+    class PaymentReceived
+}
+
+package "Application Layer" {
+    class OrderPlacedHandler
+    class InvoiceIssuedHandler
+    class PaymentReceivedHandler
+}
+
+Order ..> OrderPlaced : emits
+OrderPlaced --> OrderPlacedHandler : handled by
+OrderPlacedHandler ..> Invoice : creates
+Invoice ..> InvoiceIssued : emits
+InvoiceIssued --> InvoiceIssuedHandler : handled by
+InvoiceIssuedHandler ..> Payment : creates
+Payment ..> PaymentReceived : emits
+PaymentReceived --> PaymentReceivedHandler : handled by
+PaymentReceivedHandler ..> Invoice : updates
+
+@enduml

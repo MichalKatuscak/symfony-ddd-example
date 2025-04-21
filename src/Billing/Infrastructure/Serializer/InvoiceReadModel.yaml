@@ -1,0 +1,24 @@
+Billing\Application\ReadModel\InvoiceReadModel:
+    attributes:
+        id:
+            groups: ['invoice_read']
+        orderId:
+            groups: ['invoice_read']
+        invoiceNumber:
+            groups: ['invoice_read']
+        status:
+            groups: ['invoice_read']
+        customerEmail:
+            groups: ['invoice_read']
+        customerName:
+            groups: ['invoice_read']
+        createdAt:
+            groups: ['invoice_read']
+        issuedAt:
+            groups: ['invoice_read']
+        paidAt:
+            groups: ['invoice_read']
+        items:
+            groups: ['invoice_read']
+        total:
+            groups: ['invoice_read']

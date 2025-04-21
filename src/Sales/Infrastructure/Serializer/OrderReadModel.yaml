@@ -1,0 +1,18 @@
+Sales\Application\ReadModel\OrderReadModel:
+    attributes:
+        id:
+            groups: ['order_read']
+        status:
+            groups: ['order_read']
+        customerEmail:
+            groups: ['order_read']
+        customerName:
+            groups: ['order_read']
+        createdAt:
+            groups: ['order_read']
+        placedAt:
+            groups: ['order_read']
+        items:
+            groups: ['order_read']
+        total:
+            groups: ['order_read']

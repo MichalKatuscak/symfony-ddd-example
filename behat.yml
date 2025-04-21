@@ -1,0 +1,14 @@
+default:
+    suites:
+        default:
+            contexts:
+                - Tests\Behat\OrderContext
+                - Tests\Behat\InvoiceContext
+                - Tests\Behat\PaymentContext
+    extensions:
+        FriendsOfBehat\SymfonyExtension:
+            bootstrap: tests/bootstrap.php
+            kernel:
+                class: App\Kernel
+                environment: test
+                debug: true

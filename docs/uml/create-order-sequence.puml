@@ -1,0 +1,57 @@
+@startuml Create Order Sequence Diagram
+
+actor Client
+participant "API Gateway" as API
+participant "OrderController" as Controller
+participant "CommandBus" as CommandBus
+participant "CreateOrderHandler" as Handler
+participant "Order" as Order
+participant "OrderRepository" as Repository
+database "Database" as DB
+
+Client -> API: POST /api/orders
+activate API
+
+API -> Controller: create(request)
+activate Controller
+
+Controller -> CommandBus: dispatch(CreateOrder)
+activate CommandBus
+
+CommandBus -> Handler: __invoke(CreateOrder)
+activate Handler
+
+Handler -> Order: create(id, email, name)
+activate Order
+Order --> Handler: order
+deactivate Order
+
+Handler -> Order: addItem(itemId, productName, unitPrice, quantity)
+activate Order
+Order --> Handler: void
+deactivate Order
+
+Handler -> Repository: save(order)
+activate Repository
+
+Repository -> DB: persist(order)
+activate DB
+DB --> Repository: void
+deactivate DB
+
+Repository --> Handler: void
+deactivate Repository
+
+Handler --> CommandBus: void
+deactivate Handler
+
+CommandBus --> Controller: void
+deactivate CommandBus
+
+Controller --> API: { id: orderId }
+deactivate Controller
+
+API --> Client: 201 Created
+deactivate API
+
+@enduml

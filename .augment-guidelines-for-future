@@ -1,0 +1,134 @@
+# .augment-guidlines
+###############################################################################
+# CÍL
+###############################################################################
+Vygeneruj plnohodnotný **monorepozitář** (Symfony 6.3, PHP 8.1, Doctrine) pro **DDD**
+architekturu domén **Identity / Objednávky / Fakturace / Platby / Zprávy**,
+ včetně kompletní dokumentace, testů a CI pipeline.
+
+###############################################################################
+# VÝSLEDNÁ STRUKTURA
+###############################################################################
+.
+├─ apps/
+│  ├─ api-gateway/           # Symfony API (JSON + HAL + JWT auth)
+│  └─ console/               # CLI, cron úlohy
+├─ src/
+│  ├─ Identity/              # Bounded Context „Identity“ (Uživatelé)
+│  ├─ Sales/                 # „Sales“  (Objednávky)
+│  ├─ Billing/               # „Billing“ (Fakturace)
+│  ├─ Payments/              # „Payments“(Platby)
+│  └─ Messages/              # „Messages“ (Notifikace)
+├─ tests/                    # unit, integration, e2e
+├─ docs/                     # UML + ADR + API reference (OpenAPI 3.1)
+├─ docker/                   # Dockerfile, docker‑compose.yml
+└─ .github/workflows/        # CI (⚙ PHPUnit, Psalm, PHPStan, Fixer)
+
+###############################################################################
+# ARCHITEKTONICKÁ PRAVIDLA
+###############################################################################
+* **DDD layers**: Domain → Application → Infrastructure → Interface.
+* **CQRS + Light Event Sourcing**: Commands mění stav agregátů; čtecí
+  modely materializujeme projekcemi.
+* **Sága / Process Manager**: orchestrace workflow _Order → Invoice → Payment → Notifications_.
+* **Symfony Messenger**
+  * **command bus** – sync;  **event bus** – async (transport = Doctrine DBAL).
+* **Symfony Security** + **JWT**
+  * `POST /users` = registrace (UserRegistered → WelcomeNotification).
+  * `POST /auth/login` vydá Bearer token (JWT, HS256) – expirace 30 min.
+* **Doctrine ORM** výhradně v Infrastructure; Domain zůstává bez anotací.
+* Každý agregát (User, Order, Invoice, Payment, Notification) = vlastní **Repository**.
+* **Value Objects**: UserId, Email, PasswordHash, BillingAddress, Money, SlackChannel, VATId, … – vše immutable.
+* **Hexagonal ports/adapters**: Stripe, Slack API, SMTP → Messages, Argon password‑hasher.
+* API endpointy musí kdykoli vracet **aktuální stav** daného procesu, např.
+  `/processes/{uuid}` nebo `/orders/{uuid}`.
+
+###############################################################################
+# DOMÉNOVÝ MODEL – SHRŇ
+###############################################################################
+| Bounded Context | Agregát      | Invarianty (výběr)                                   | Klíčové události            |
+|-----------------|--------------|------------------------------------------------------|-----------------------------|
+| Identity        | User         | unique Email; passwordHash ≠ null                    | UserRegistered, UserLoggedIn|
+| Sales           | Order        | položky ≠ 0; stav ∈ {Draft,Placed,…}; buyerId ≠ null | OrderPlaced                |
+| Billing         | Invoice      | položky ≠ 0; total ≥ 0                                | InvoiceIssued              |
+| Payments        | Payment      | amount > 0; unique transactionId                      | PaymentReceived            |
+| Messages        | Notification | recipient ≠ null; channel ∈ {Email,Slack}            | NotificationDispatched     |
+
+###############################################################################
+# DOKUMENTACE
+###############################################################################
+* **README.md** – architektura, lokální běh, build, test.
+* **docs/adr/**: min. ADR‑001 Architecture, ADR‑002 CQRS, ADR‑003 SagaProcess, ADR‑004 Payments, ADR‑005 Identity.
+* **docs/uml/**: PlantUML sekvenční diagramy use‑cases: „Register User“,
+  „Create Order“, „Issue Invoice“, „Capture Payment“, „Dispatch Notification“.
+* **OpenAPI 3.1** kontrakt `apps/api-gateway/openapi.yaml` včetně:
+  * `/users` (POST: registrace),
+  * `/auth/login` (POST: login),
+  * `/orders` (POST), `/orders/{uuid}` (GET),
+  * `/processes/{uuid}` (GET).
+
+###############################################################################
+# TESTOVÁNÍ
+###############################################################################
+* **PHPUnit 10** – 100 % coverage na Domain layer.
+* **Behat** – e2e scénáře: 1️⃣ Register→Login→CreateOrder, 2️⃣ Payment workflow, 3️⃣ Notification dispatch.
+* **Static analysis**: PHPStan lvl 9, Psalm strict, php‑cs‑fixer.
+
+###############################################################################
+# DEV‑OPS & CI
+###############################################################################
+* **Docker Compose**: php‑fpm, nginx, postgres:15, redis, mailhog.
+* **Makefile** aliasy (`make up`, `make test`, `make cs‑fix` …).
+* **GitHub Actions**:
+  * install & cache composer,
+  * php‑cs‑fixer –dry‑run,
+  * phpstan, psalm,
+  * unit + integration tests,
+  * docker image build on *main*.
+
+###############################################################################
+# IMPLEMENTAČNÍ GUIDELINY
+###############################################################################
+1. Každý Bounded Context = vlastní composer package.
+2. Commands/Events v přítomném čase (RegisterUser, CreateOrder, NotificationDispatched).
+3. DTOs `readonly` ve všech vrstvách.
+4. Repository contracts v Domain; implementace v Infrastructure/Doctrine.
+5. Password hash: **Argon2id** (Symfony PasswordHasher).
+6. Autentizační token JWT podepsaný server‑secret; Refresh tokeny ulož v Redis.
+7. Debugging: Symfony Profiler + Debug Toolbar (aktivní jen v dev).
+8. PSR‑12 + Symfony Coding Standard enforced.
+9. Plan‑Driven Development: Před prvním commitem agent automaticky vygeneruje docs/plan.md obsahující hierarchický checklist (- [ ]) všech úkolů (struktura, doménové modely, testy, CI pipelines atd.). V následných commitech položky odškrtává (- [x]) odpovídající dokončené práci, dokud nejsou všechny splněny.
+
+###############################################################################
+# DORUČOVANÉ ARTEFAKTY
+###############################################################################
+* Kompletní PHP zdrojové kódy.
+* Doctrine Migrations.
+* Postman collection `docs/postman.json` pokrývající registraci, login, workflow.
+* HTML dokumentace (mkdocs → `docs/site`).
+* Skript `bin/demo‑data.php` pro seed dat.
+
+###############################################################################
+# KRITÉRIA ÚSPĚŠNOSTI
+###############################################################################
+* **POST /users** vrací `201 Created`, publikuje **UserRegistered**
+  a automaticky odešle **WelcomeNotification** (Email + Slack admin).
+* **POST /auth/login** vrací `200`, body obsahuje `access_token`, `refresh_token`.
+* **POST /orders** (autorizovaný) publikuje **OrderPlaced** a vyvolá workflow.
+* **GET /processes/{uuid}** vrací aktuální stav (Order→Invoice→Payment→Notifications) s časovými razítky.
+* `make up && make test` na čistém cloudu končí zeleně.
+* Všechny read‑model dotazy na PostgreSQL ≤ 5 ms (explain analýza).
+* Dokumentace obsahuje ≥ 5 ADR vysvětlujících klíčová rozhodnutí.
+
+###############################################################################
+# OMEZENÍ
+###############################################################################
+* Nepoužívej Kafka ani proprietární message brokers; Doctrine transport postačí.
+* Frontend React mimo scope.
+* OSS licence (MIT) pouze.
+
+###############################################################################
+# HOTOVO
+###############################################################################
+Po dokončení commitni vše na default branch **main** a pushni.
+

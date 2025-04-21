@@ -1,0 +1,67 @@
+@startuml Issue Invoice Sequence Diagram
+
+actor "System" as System
+participant "EventBus" as EventBus
+participant "OrderPlacedHandler" as Handler
+participant "OrderRepository" as OrderRepo
+participant "InvoiceNumberGenerator" as Generator
+participant "Invoice" as Invoice
+participant "InvoiceRepository" as InvoiceRepo
+database "Database" as DB
+
+System -> EventBus: dispatch(OrderPlaced)
+activate EventBus
+
+EventBus -> Handler: __invoke(OrderPlaced)
+activate Handler
+
+Handler -> OrderRepo: findById(orderId)
+activate OrderRepo
+OrderRepo --> Handler: order
+deactivate OrderRepo
+
+Handler -> Generator: generate()
+activate Generator
+Generator --> Handler: invoiceNumber
+deactivate Generator
+
+Handler -> Invoice: create(id, orderId, invoiceNumber, email, name)
+activate Invoice
+Invoice --> Handler: invoice
+deactivate Invoice
+
+loop for each order item
+    Handler -> Invoice: addItem(itemId, description, unitPrice, quantity)
+    activate Invoice
+    Invoice --> Handler: void
+    deactivate Invoice
+end
+
+Handler -> Invoice: issue()
+activate Invoice
+Invoice --> Handler: void
+deactivate Invoice
+
+Handler -> InvoiceRepo: save(invoice)
+activate InvoiceRepo
+
+InvoiceRepo -> DB: persist(invoice)
+activate DB
+DB --> InvoiceRepo: void
+deactivate DB
+
+InvoiceRepo --> Handler: void
+deactivate InvoiceRepo
+
+Handler -> EventBus: dispatch(InvoiceIssued)
+activate EventBus
+EventBus --> Handler: void
+deactivate EventBus
+
+Handler --> EventBus: void
+deactivate Handler
+
+EventBus --> System: void
+deactivate EventBus
+
+@enduml
